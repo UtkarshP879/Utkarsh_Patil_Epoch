@@ -48,7 +48,7 @@ Training and Validation Loss and Accuracy Plots for the Transformer with Categor
 
 ![Training and Validation Loss and Accuracy Plots for the Transformer_with_Categorical_Embeddings](Images/LearningPhase_Task1_Subtask1_Transformer_Categorical_Embeddings_Loss.png)
 
-In this representation, the sequences were not normalized. Instead, they were directly input as integers (specifically, the long datatype) to the transformer. Each token was then assigned its own unique embedding in the embedding table, which was then learnt as the training progressed. It can be seen from the loss plot of the transformer with categorical embeddings that it onverged much faster than the other transformer architectures, as well as the LSTM, since the embeddings were all separate and the model did not need to spend time figuring out the dependencies along a single linear projection. However, as a consequence of this, the model also became much less accurate, since it over-specialized the embeddings to the point where it is difficult for the model to infer the ranking relationship of that particular token in a sequencce upon which it has not been trained. Another major disadvantage of using this representation is the fact that the model cannot handle any out-of-distribution sequences, i.e., it does not have any embeddings for tokens (integers) that were not in its original dataset. This is not an issue seen in the other numerical representation strategy.
+In this representation, the sequences were not normalized. Instead, they were directly input as integers (specifically, the long datatype) to the transformer. Each token was then assigned its own unique embedding in the embedding table, which was then learnt as the training progressed. It can be seen from the loss plot of the transformer with categorical embeddings that it onverged much faster than the other transformer architectures, as well as the LSTM, since the embeddings were all separate and the model did not need to spend time figuring out the dependencies along a single linear projection. However, as a consequence of this, the model also became much less accurate, since it over-specialized the embeddings to the point where it is difficult for the model to infer the ranking relationship of that particular token in a sequencce upon which it has not been trained. Another major disadvantage of using this representation is the fact that the model cannot handle any out-of-distribution sequences, i.e., it does not have any embeddings for tokens (integers) that were not in its original dataset. This is not an issue seen in the continuous numerical representation strategy.
 
 # Ablations and Experiments:
 ## 1. Using Categorical Embeddings:
@@ -67,3 +67,37 @@ This shows that, for long-term training, the presence of positional encodings is
 ## 3. Depth Experiments:
 
 After training the regular transformer model on different numbers of layers, it was noticed that the reasoning ability improved significantly with an increase in the number of layers from 1 to 2 to 4. While the 1-layer model was only as good as the LSTM in terms of its accuracies, the 4-layer model massively outperformed it. This emphasises that the power of transformers lies largely in the abstractions inferred by their layers, one after the other. This is something that LSTM's and other recurrent architectures are unable to do.
+
+# Evaluation Metrics:
+| Model | Test Token-level Accuracy | Test Sequence-level Accuracy |
+| :--- | :--- | :--- |
+| LSTM | 84.14 % | 22.53 % |
+| Transformer | 99.58 % | 97.00 % |
+| Transformer with Categorical Embeddings | 81.38 % | 23.33 % |
+| Transformer without Positional Encodings | 99.46 % | 94.73 % |
+
+# Attention Visualizations:
+For all the transformers, the input sequence of 220, 56, 878, 354, 22, 990, 843, 822, 89, 250 was used.
+
+Attention weights for the Encoder-Only Transformer:
+
+![Attention_weights for the Encoder-Only_Transformer](Images/LearningPhase_Task1_Subtask1_Transformer_AttentionGrid.png)
+
+Here, the first layer appears to be aiming to capture the extreme ends of the sequence. It can be seen that the largest scores are for those corresponding to the numbers 990 and 22, which are the maximum and minimum elements in the sequence, respectively. Then, the second layer appears to be attempting to group closeby integers together, such as 990, 878, 843, and 822. Following this, the 3rd and 4th layers attempt to convert the local relationship information into global relational reasoning.
+
+Attention weights for the Transformer with Categorical Embeddings:
+
+![Attention_weights for the Transformer_with_Categorical_Embeddings](Images/LearningPhase_Task1_Subtask1_Transformer_Categorical_Embeddings_AttentionGrid.png)
+
+The scores of the first 2 layers appear quite unstructed and seem to lack any interpretable focus. This is likely due to the fact that the model treats each embedding independently, making it difficult to make any early inferences about the order. Only in the last layer do we see a more organized attempt towards ordering the elements. However, this, as mentioned earlier, is not sufficient to match the performance of the model's continuous representation counterparts.
+
+Attention weights for the Transformer without Positional Encodings:
+
+![Attention_weights for the Transformer_without_Positional_Encodings](Images/LearningPhase_Task1_Subtask1_Transformer_NoPosEncodings_AttentionGrid.png)
+
+This model uses its first layer in a much more generalized way. Instead of just focusing on extreme values, it is attempting to reason globally from the get-go, since it does not have direct positional hints. Its later layers then seem to interpolate those global comparisons into a concrete order, by clustering close numbers together and attempting to infer the exact ranks.
+
+# Conlusions and Observations:
+Self-attention and the transformer architecture are certainly a massive upgrade from recurrent networks for this relational reasoning task. The major reason for this is that stacking multiple layers of attention and feed-forward blocks on each other allows for the learning of more complex and nuanced ordering abstractions. This helps the transformer models to generalize better to new sequences.
+
+Continuous representations (with normalization) are a far better choice of numerical representation as compared to categorical embeddings, for this particular task. Ranking tasks require an understanding of the order relations between integers, which an embedding-based architecture does not naturally achieve. This difference in structured learning is also clearly visible in the attention scores of the models. Moreover, positional encodings are not as important for the learning quality of the transformer for ranking tasks. The model is able to converge and generalize in a meaningful way even without them.
