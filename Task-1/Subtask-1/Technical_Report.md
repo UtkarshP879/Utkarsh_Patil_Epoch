@@ -1,6 +1,11 @@
 # Methodology:
 The array element ranking task has been explored using
 1. A Bidirectional LSTM (A Baseline Model)
+
+Training and Validation Loss and Accuracy Plots for the LSTM:
+
+![Training and Validation Loss and Accuracy Plots for the LSTM](Images/LearningPhase_Task1_Subtask1_LSTM_Loss.png)
+
 2. An Encoder-Only Transformer with two separate architectures for data representation using:
    
    A. Continuous Representations
@@ -31,11 +36,34 @@ Apart from the absence of positional encodings, the architecture of this transfo
 # Numerical Representation Strategies:
 A. Continuous Representation:
 
+Training and Validation Loss and Accuracy Plots for the Encoder-Only Transformer:
+
+![Training and Validation Loss and Accuracy Plots for the Encoder-Only_Transformer](Images/LearningPhase_Task1_Subtask1_Transformer_Loss.png)
+
 In this representation, the sequences were first normalized using z-score normalization and then input to the model as floats, where the model then used a linear layer to project the floats to the hidden-dimensional space. It allowed the LSTM as well as transformer architectures to converge smoothly. However, it also took more epochs for the models with this representation type to converge, because the model had to learn the ranking dependencies based off of the information within a single linear projection. However, as can be seen in the evaluation metrics section, this representation also led to the most accurate transformer models.
 
 B. Categorical Embeddings:
+
+Training and Validation Loss and Accuracy Plots for the Transformer with Categorical Embeddings:
+
+![Training and Validation Loss and Accuracy Plots for the Transformer_with_Categorical_Embeddings](Images/LearningPhase_Task1_Subtask1_Transformer_Categorical_Embeddings_Loss.png)
 
 In this representation, the sequences were not normalized. Instead, they were directly input as integers (specifically, the long datatype) to the transformer. Each token was then assigned its own unique embedding in the embedding table, which was then learnt as the training progressed. It can be seen from the loss plot of the transformer with categorical embeddings that it onverged much faster than the other transformer architectures, as well as the LSTM, since the embeddings were all separate and the model did not need to spend time figuring out the dependencies along a single linear projection. However, as a consequence of this, the model also became much less accurate, since it over-specialized the embeddings to the point where it is difficult for the model to infer the ranking relationship of that particular token in a sequencce upon which it has not been trained. Another major disadvantage of using this representation is the fact that the model cannot handle any out-of-distribution sequences, i.e., it does not have any embeddings for tokens (integers) that were not in its original dataset. This is not an issue seen in the other numerical representation strategy.
 
 # Ablations and Experiments:
 ## 1. Using Categorical Embeddings:
+The transformer model with categorical embeddings, as mentioned earlier, converged much faster than the other models (20 epochs, as compared to 100 epochs for the other models), but lacked the accuracy that they had. It was unable to generalize its global relational reasoning the same way the other transformers were able to. This shows that it is very important for the model to be able to learn the general patterns in the sequence data that decide the relative ranks, something which this model could not do with its linearly unrelated embeddings. This model does not treat consecutive numbers as necessarily mathematically ordered, since it is not a linear projection (as in the case of the continuous representation strategy), but rather as independent symbols. This is why it was unable to perform as well as the other models.
+
+## 2. Removing Positional Encodings:
+
+Training and Validation Loss Plots for the Transformer without Positional Encodings:
+
+![Training and Validation Loss and Accuracy Plots for the Transformer_without_Positional_Encodings](Images/LearningPhase_Task1_Subtask1_Transformer_NoPosEncodings_Loss.png)
+
+It can be seen from the plots that, without the information provided by the positional encodings, the model initially tries to infer the positional and global relationships by itself. The validation loss and the sequence-level accuracry initially remain volatile, as the model tries to learn the positional information. However, interestingly, after this is done, the remaining part of the training remains quite smooth, with the validation loss as well as accuracy plots being much less volatile than the ones for the model with the positional encodings present. Finally, the model without the positional encodings was able to achieve accuracies almost as same as those of the model with them.
+
+This shows that, for long-term training, the presence of positional encodings is not as important for this particular task. The exact sequential information is certainly lost by removing positional encodings, however, logically, the relative ranks of the elements in the sequence, once the sequence has been defined, do not depend on the exact permutation that the sequence is in.
+
+## 3. Depth Experiments:
+
+After training the regular transformer model on different numbers of layers, it was noticed that the reasoning ability improved significantly with an increase in the number of layers from 1 to 2 to 4. While the 1-layer model was only as good as the LSTM in terms of its accuracies, the 4-layer model massively outperformed it. This emphasises that the power of transformers lies largely in the abstractions inferred by their layers, one after the other. This is something that LSTM's and other recurrent architectures are unable to do.
